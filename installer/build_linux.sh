@@ -71,7 +71,7 @@ chmod +x "$APPDIR/AppRun"
 # Build AppImage
 echo "Building AppImage..."
 mkdir -p "$SCRIPT_DIR/Output"
-APPIMAGE_NAME="PB_Asset_Decryptor-v${VERSION}-x86_64.AppImage"
+APPIMAGE_NAME="PB_Asset_Decryptor_v${VERSION}_Linux_x86_64.AppImage"
 
 if command -v appimagetool &>/dev/null; then
     ARCH=x86_64 appimagetool "$APPDIR" "$SCRIPT_DIR/Output/$APPIMAGE_NAME"

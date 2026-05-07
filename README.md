@@ -72,9 +72,9 @@ Grab the latest release from the [Releases page](https://github.com/davidvanderb
 
 | Platform | File | Notes |
 |----------|------|-------|
-| Windows | `PB_Asset_Decryptor_Setup_v*.exe` | Bundles its own Python runtime |
-| macOS | `PB_Asset_Decryptor_v*.dmg` | Universal binary |
-| Linux | `PB_Asset_Decryptor-v*-x86_64.AppImage` | Portable, no install needed |
+| Windows | `PB_Asset_Decryptor_Setup_v*_Windows.exe` | Bundles its own Python runtime |
+| macOS | `PB_Asset_Decryptor_v*_macOS.dmg` | Universal binary |
+| Linux | `PB_Asset_Decryptor_v*_Linux_x86_64.AppImage` | Portable, no install needed |
 
 The Windows installer includes a "Install Prerequisites" task you can opt
 into during setup — it sets up WSL2 + Ubuntu and installs `e2fsprogs` +

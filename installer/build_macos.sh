@@ -54,7 +54,7 @@ codesign --force --deep --sign - "$APP_PATH"
 # Create DMG
 echo "Creating DMG..."
 mkdir -p "$SCRIPT_DIR/Output"
-DMG_NAME="PB_Asset_Decryptor_v${VERSION}.dmg"
+DMG_NAME="PB_Asset_Decryptor_v${VERSION}_macOS.dmg"
 if command -v create-dmg &>/dev/null; then
     create-dmg \
         --volname "PB Asset Decryptor" \
