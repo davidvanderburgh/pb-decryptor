@@ -1,0 +1,8 @@
+# PB Asset Decryptor — Python dependencies
+#
+# The main application uses only the Python standard library (tkinter,
+# tarfile, gzip, hashlib, json, threading, urllib).  No packages required.
+#
+# Pillow is only needed to regenerate the app icon from source:
+#   python generate_icon.py
+Pillow>=10.0

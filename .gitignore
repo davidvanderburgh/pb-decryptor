@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Installer build artifacts
+installer/build/
+installer/Output/
+
+# Game files (large update archives and Clonezilla images — not for version control)
+*.upd
+*.upd.partial
+*.iso
+*.iso.partial
+*.tar.gz
+*.tar
+images/
+
+# Extracted game assets (large — share via mod packs instead)
+/output/
+/extracted/
+
+# OS noise
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor noise
+.vscode/
+.idea/
+*.swp
+*~

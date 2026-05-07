@@ -1,0 +1,154 @@
+name: Build Release Installers
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install pyinstaller pillow
+          brew install create-dmg
+
+      - name: Stamp version from tag
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          python -c "import re,pathlib;p=pathlib.Path('pb_decryptor/__init__.py');p.write_text(re.sub(r'__version__\s*=\s*\"[^\"]*\"','__version__ = \"'+'${VERSION}'+'\"',p.read_text()))"
+
+      - name: Generate icon if missing
+        run: |
+          if [ ! -f pb_decryptor/icon.png ]; then
+            python generate_icon.py
+          fi
+
+      - name: Build DMG
+        run: bash installer/build_macos.sh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-dmg
+          path: installer/Output/*.dmg
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          echo "C:\Program Files (x86)\Inno Setup 6" | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
+
+      - name: Stamp version from tag
+        shell: bash
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          python -c "import re,pathlib;p=pathlib.Path('pb_decryptor/__init__.py');p.write_text(re.sub(r'__version__\s*=\s*\"[^\"]*\"','__version__ = \"'+'${VERSION}'+'\"',p.read_text()))"
+
+      - name: Generate icon if missing
+        shell: bash
+        run: |
+          if [ ! -f pb_decryptor/icon.ico ]; then
+            pip install pillow
+            python generate_icon.py
+          fi
+
+      - name: Build installer
+        shell: pwsh
+        run: installer/build.ps1
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: installer/Output/*.exe
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install pyinstaller pillow
+          # Install AppImage tooling
+          sudo apt-get update -qq
+          sudo apt-get install -y libfuse2
+          wget -q https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage -O /usr/local/bin/appimagetool
+          sudo chmod +x /usr/local/bin/appimagetool
+
+      - name: Stamp version from tag
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          python -c "import re,pathlib;p=pathlib.Path('pb_decryptor/__init__.py');p.write_text(re.sub(r'__version__\s*=\s*\"[^\"]*\"','__version__ = \"'+'${VERSION}'+'\"',p.read_text()))"
+
+      - name: Generate icon if missing
+        run: |
+          if [ ! -f pb_decryptor/icon.png ]; then
+            python generate_icon.py
+          fi
+
+      - name: Build AppImage
+        run: bash installer/build_linux.sh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-appimage
+          path: installer/Output/*.AppImage
+
+  release:
+    needs: [build-macos, build-windows, build-linux]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-dmg
+          path: artifacts/macos-dmg
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-installer
+          path: artifacts/windows-installer
+
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-appimage
+          path: artifacts/linux-appimage
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/macos-dmg/*.dmg
+            artifacts/windows-installer/*.exe
+            artifacts/linux-appimage/*.AppImage
