@@ -134,11 +134,14 @@ Extract phase is more involved:
    stores `dd | gzip` (no partclone wrapping despite the `.dd-ptcl-img`
    extension), so a straight `gunzip` on the concatenated `.aa`/`.ab`/
    `.ac` segments yields a raw ext4 image.
-4. **Extract files** from the raw ext4 image via `debugfs rdump`.
+4. **Extract the `/game/` subtree** (and `/opt/game/` if present) from
+   the raw ext4 image via `debugfs rdump`.
 
-The result is a full filesystem dump of the game partition (~7,500 files
-for Alien, more for Queen).  The PB game files live under `game/<gamename>/`
-inside the output, exactly matching the layout you'd see in a `.upd`.
+The output contains *only* the game directories — the same layout you'd
+see in a `.upd`.  System files (`/bin`, `/lib`, `/etc`, …) are skipped
+because they include Linux symlinks that Windows Explorer can't delete
+cleanly through the WSL 9p bridge, and you don't need them for modding.
+If you ever do, run `debugfs -R 'rdump "/" "out"' <raw.img>` directly.
 
 ### Editing Assets
 

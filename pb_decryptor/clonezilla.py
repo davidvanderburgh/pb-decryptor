@@ -412,28 +412,56 @@ def extract(iso_path, output_dir, executor, game_key=None,
             pass
 
         # ── Step 4: Extract files via debugfs rdump ─────────────────
+        # Scope the rdump to /game/ (and /opt/game/ if present).  The rest
+        # of the partition is a stock Linux root filesystem with symlinks
+        # (`/bin -> usr/bin`, `/lib -> usr/lib`, ...) that Windows Explorer
+        # cannot delete cleanly once they're created on /mnt/c via the 9p
+        # bridge.  Modders only ever care about the game subtree anyway.
         progress(3, 4, "Extracting files from ext4...")
-        log("Extracting files via debugfs rdump...", "info")
+        log("Extracting game files via debugfs rdump...", "info")
         os.makedirs(output_dir, exist_ok=True)
         out_exec = executor.to_exec_path(output_dir)
 
-        # We run debugfs in a forced-mount-as-RO mode and rdump everything
-        # to the output dir.  rdump preserves directory structure.
-        debug_cmd = (
-            f'debugfs -R \'rdump "/" "{out_exec}"\' {raw_path_exec} 2>&1 '
-            f'| grep -v "^debugfs " | head -200'
-        )
-        try:
-            for line in executor.stream(debug_cmd, timeout=7200):
-                line = line.strip()
-                if line:
-                    log(f"  {line}", "info")
-        except CommandError as e:
-            # debugfs sometimes returns non-zero even when rdump succeeded.
-            # Check if any files were actually written before raising.
-            n = sum(len(fs) for _, _, fs in os.walk(output_dir))
-            if n == 0:
-                raise RuntimeError(f"debugfs rdump failed: {e.output}")
+        # Probe which subtrees actually exist in this image.  We try /game
+        # first (Alien & Queen layout) and /opt/game second (Predator-style
+        # full installs, in case any ship as Clonezilla images in future).
+        # `debugfs stat <path>` prints an "Inode: <n>" line iff the path
+        # exists; otherwise it prints "<path>: File not found ...".
+        candidate_paths = ["/game", "/opt/game"]
+        found = []
+        for cand in candidate_paths:
+            try:
+                executor.run(
+                    f'debugfs -R \'stat "{cand}"\' {raw_path_exec} 2>/dev/null '
+                    f'| grep -q "^Inode: "',
+                    timeout=30,
+                )
+                found.append(cand)
+            except CommandError:
+                continue
+
+        if not found:
+            raise RuntimeError(
+                "Neither /game/ nor /opt/game/ exists in the partition.  "
+                "This doesn't look like a PB Clonezilla image; if you need "
+                "the full filesystem dump, run debugfs rdump manually.")
+
+        log(f"  Extracting subtree(s): {', '.join(found)}", "info")
+
+        for cand in found:
+            debug_cmd = (
+                f'debugfs -R \'rdump "{cand}" "{out_exec}"\' {raw_path_exec} '
+                f'2>&1 | grep -v "^debugfs " | head -200'
+            )
+            try:
+                for line in executor.stream(debug_cmd, timeout=7200):
+                    line = line.strip()
+                    if line:
+                        log(f"  {line}", "info")
+            except CommandError as e:
+                n = sum(len(fs) for _, _, fs in os.walk(output_dir))
+                if n == 0:
+                    raise RuntimeError(f"debugfs rdump failed: {e.output}")
 
         # Tidy temp file.
         try:

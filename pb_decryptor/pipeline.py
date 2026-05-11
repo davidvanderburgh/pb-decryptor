@@ -680,6 +680,6 @@ class IsoExtractPipeline(_BasePipeline):
             f"{info['display']} extracted from Clonezilla ISO.\n\n"
             f"Output: {self.output_dir}\n"
             f"Files:  {n}\n\n"
-            f"This is a full filesystem dump from the game partition; the "
-            f"PB game files live under `opt/game/` or `game/<gamename>/` "
-            f"inside the output folder.")
+            f"Scoped to the game subtree(s) (game/, opt/game/) — system "
+            f"files and symlinks are skipped so Windows Explorer can manage "
+            f"the folder cleanly.")
